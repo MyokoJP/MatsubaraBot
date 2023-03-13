@@ -14,10 +14,16 @@ client = discord.Client(intents=discord.Intents.all())
 date = datetime.datetime.now()
 Uho = 0
 ooiCount = 0
+statuses = ['🔰ヘルプ：b!help', '🎥ななパパを監視中', '🧠頑張って稼働中']
 
-##########################
-DeveloperMode = "on"
-##########################
+
+with open('settings.yml', 'r') as r:
+    Yml = yaml.load(r, Loader=yaml.Loader)
+
+    if Yml["env"] == "dev":
+        DeveloperMode = "on"
+    elif Yml["env"] == "exe":
+        DeveloperMode = "off"
 
 
 if DeveloperMode == "off":
@@ -31,15 +37,21 @@ def print_log():
           str(date.minute) + ":" + str(date.second) + " INFO       " + "Message successfully replied.")
 
 
+async def update_status():
+    while True:
+        for status in statuses:
+            await client.change_presence(activity=discord.Game(name=status))
+            await asyncio.sleep(10)
+
+
 @client.event
 async def on_ready():
     print('Logged in as', client.user, '!')
     print('BOT-ID   :', client.user.id)
+    client.loop.create_task(update_status())
     if DeveloperMode == "on":
-        await client.change_presence(activity=discord.Game(name="b!help | ななパパを監視中"))
         print("確認：デベロッパーモードはONになっています")
     else:
-        await client.change_presence(activity=discord.Game(name="b!help | ななパパを監視中"))
         print("確認：デベロッパーモードはOFFになっています")
     loop.start()
 
@@ -102,7 +114,7 @@ async def on_message(message):
                             embed = discord.Embed(
                                 title="エラー",
                                 color=discord.Colour.from_rgb(224, 0, 0),
-                                description="チャンネルが入力されていないか、正しく設定されていません。詳しくは`b!help`をご覧ください。"
+                                description="チャンネルのメンションがされていないか、正しく設定されていません。\n詳しくは`b!help`をご覧ください。"
                             )
                             await message.reply(embed=embed)
                             return
@@ -140,7 +152,7 @@ async def on_message(message):
                             embed = discord.Embed(
                                 title="エラー",
                                 color=discord.Colour.from_rgb(224, 0, 0),
-                                description="チャンネルが入力されていないか、正しく設定されていません。詳しくは`b!help`をご覧ください。"
+                                description="チャンネルのメンションがされていないか、正しく設定されていません。\n詳しくは`b!help`をご覧ください。"
                             )
                             await message.reply(embed=embed)
                             return
@@ -148,7 +160,9 @@ async def on_message(message):
                         embed = discord.Embed(
                             title="エラー",
                             color=discord.Colour.from_rgb(224, 0, 0),
-                            description="引数2が正しく設定されていません。詳しくは`b!help`をご覧ください。"
+                            description="引数2が正しく設定されていません。\n  ・問題点：" + message.content.split()[0] + " " +
+                                        message.content.split()[1] + " **__" + message.content.split()[2] + "__**" +
+                                        "\n\n詳しくは`b!help`をご覧ください。"
                         )
                         await message.reply(embed=embed)
                         return
@@ -189,7 +203,7 @@ async def on_message(message):
                             embed = discord.Embed(
                                 title="エラー",
                                 color=discord.Colour.from_rgb(224, 0, 0),
-                                description="チャンネルが入力されていないか、正しく設定されていません。詳しくは`b!help`をご覧ください。"
+                                description="チャンネルが入力されていないか、正しく設定されていません。\n詳しくは`b!help`をご覧ください。"
                             )
                             await message.reply(embed=embed)
                             return
@@ -227,16 +241,26 @@ async def on_message(message):
                             embed = discord.Embed(
                                 title="エラー",
                                 color=discord.Colour.from_rgb(224, 0, 0),
-                                description="チャンネルが入力されていないか、正しく設定されていません。詳しくは`b!help`をご覧ください。"
+                                description="チャンネルが入力されていないか、正しく設定されていません。\n詳しくは`b!help`をご覧ください。"
                             )
                             await message.reply(embed=embed)
                             return
                 else:
-                    embed = discord.Embed(
-                        title="エラー",
-                        color=discord.Colour.from_rgb(224, 0, 0),
-                        description="引数1が正しく設定されていません。詳しくは`b!help`をご覧ください。"
-                    )
+                    if len(message.content.split()) == 2:
+                        embed = discord.Embed(
+                            title="エラー",
+                            color=discord.Colour.from_rgb(224, 0, 0),
+                            description="引数1が正しく設定されていません。\n　・問題点：" + message.content.split()[0] + " __**" +
+                                        message.content.split()[1] + "**__" + "\n\n詳しくは`b!help`をご覧ください。"
+                        )
+                    else:
+                        embed = discord.Embed(
+                            title="エラー",
+                            color=discord.Colour.from_rgb(224, 0, 0),
+                            description="引数1が正しく設定されていません。\n　・問題点：" + message.content.split()[0] + "__**" +
+                                        message.content.split()[1] + "**__ " + message.content.split()[2] +
+                                        "\n\n詳しくは`b!help`をご覧ください。"
+                        )
                     await message.reply(embed=embed)
                     return
 
@@ -333,12 +357,20 @@ async def on_message(message):
     if ("そうたよ" in message.content or "そーたよ" in message.content or "そぅたよ" in message.content or
         "そおたよ" in message.content or "そーーたよ" in message.content or "そおおたよ" in message.content or
             "そーーーたよ" in message.content or "そおおおたよ" in message.content):
-        if random.randrange(100) < 2:
+        if random.randrange(100) < 4:
             msg = await message.channel.send("そうたよ（便乗）")
             async with message.channel.typing():
                 await asyncio.sleep(10)
-                await msg.edit("そうたよ（焦）")
+                await msg.edit("そうたよ（焦らし）")
         return
+
+    if "もへ" in message.content or "MOHE" in message.content.upper():
+        if random.randrange(100) < 2:
+            async with message.channel.typing():
+                await asyncio.sleep(4)
+                await message.reply("ﾓ、ﾓﾍｪ~(焦)", mention_author=False)
+        return
+
     if ("おおい" in message.content or "おいい" in message.content or "おいっ" in message.content or
         "ぉおい" in message.content or "おぉい" in message.content or "ぉおぃ" in message.content or
         "おぉぃ" in message.content or "ぉいぃ" in message.content or "ぉぃい" in message.content or
@@ -350,8 +382,8 @@ async def on_message(message):
         "ぉぅぃ" in message.content or "おいい" in message.content or "ぉいい" in message.content or
         "おぃい" in message.content or "おいぃ" in message.content or "ぉぃい" in message.content or
         "おぃぃ" in message.content or "ぉいぃ" in message.content or "ぉぃぃ" in message.content or
-        "ooi" in message.content or "oi" in message.content or "oii" in message.content or
-            "oooi" in message.content):
+        "OOI" in message.content.upper() or "OI" in message.content.upper() or
+            "OII" in message.content.upper() or "OOOI" in message.content.upper()):
         if random.randrange(100) < 1:
             await message.channel.send("あおい")
             return
@@ -371,7 +403,7 @@ async def on_message(message):
                 await msg.edit("そうかなぁ～？（懐疑心）")
             return
 
-    if "だる" in message.content or "だある" in message.content or "daru" in message.content.casefold():
+    if "だる" in message.content or "だある" in message.content or "DARU" in message.content.upper():
         emoji = "<:daru:1075407121274900550>"
         await message.add_reaction(emoji)
         print(str(date.year) + "-" + str(date.month) + "-" + str(date.day) + " " + str(date.hour) + ":" +
@@ -388,14 +420,15 @@ async def on_message(message):
                 yml["s"][server_id] = True
                 yaml.dump(yml, fw, default_flow_style=False)
         else:
-            if yml[server_id] is False:
+            if yml["s"][server_id] is False:
                 return
         if channel_id not in yml["c"]:
             return
         if yml["c"][channel_id] is False:
             return
 
-    if "うほっ" in message.content or "うほ" in message.content or "ウホ" in message.content or "ウホッ" in message.content:
+    if ("うほっ" in message.content or "うほ" in message.content or "ウホ" in message.content or
+            "ウホッ" in message.content or "UHO" in message.content.upper()):
         if random.randrange(100) < 10:
             message.channel.send("ばrrrrrら")
             return
@@ -404,8 +437,8 @@ async def on_message(message):
         await message.channel.send(random_message)
         print_log()
         return
-    if ("前田" in message.content or "まえだ" in message.content or "maeda" in message.content or
-            "MAEDA" in message.content):
+
+    if "前田" in message.content or "まえだ" in message.content or "MAEDA" in message.content.upper():
         if random.randrange(100) < 2:
             await message.channel.send(file=discord.File("daru.png"))
             return
@@ -414,8 +447,9 @@ async def on_message(message):
         await message.channel.send(random_message)
         print_log()
         return
-    if ("清正" in message.content or "きよまさ" in message.content or "kiyomasa" in message.content or
-            "KIYOMASA" in message.content or "キヨまさ" in message.content):
+
+    if ("清正" in message.content or "きよまさ" in message.content or
+            "KIYOMASA" in message.content.upper() or "キヨまさ" in message.content):
         if random.randrange(100) < 40:
             await message.channel.send("清正くんは年明けてから全然部活きてませんねえ～")
             return
@@ -464,7 +498,7 @@ async def loop():
                 )
                 embed.set_author(name="ななパパ更新通知", icon_url="https://www.myoko.xyz/header_bk.png")
                 embed.set_image(url=src)
-                embed.set_footer(text="by <:ameba:1081490390454116362>ななパパの徒然日記 (*´д`*)もへぇ～♡")
+                embed.set_footer(text="by ななパパの徒然日記 (*´д`*)もへぇ～♡")
                 with open('settings.yml', 'r') as f:
                     yml = yaml.load(f, Loader=yaml.Loader)
                     channels = yml["n"]
